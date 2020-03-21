@@ -1,11 +1,7 @@
 #include <Arduino.h>
-#include <Servo.h>
 
-Servo claw;
 void setup() {
-  claw.attach(11);
-  delay(1000);
-  claw.read();
+  // put your setup code here, to run once:
 }
 
 void loop() {
