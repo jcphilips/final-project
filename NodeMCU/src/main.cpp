@@ -31,7 +31,7 @@ void printResult(FirebaseData &data);
 void updateServo();
 
 int gripperServoStatus = 0, baseServoStatus = 0, verticalServoStatus = 0, wheelsStatus = 0;
-int baseAngle = 90, verticalAngle = 90, gripperAngle = 0, movementSpeed = 0;
+int baseAngle = 90, verticalAngle = 90, gripperAngle = 180, movementSpeed = 0;
 
 void setup()
 {
@@ -75,9 +75,10 @@ void setup()
   delay(300);
   gripperServo.attach(D7);
   gripperServo.write(gripperAngle); 
-
+  pinMode(LED_BUILTIN, OUTPUT);
   pinMode(D1, OUTPUT);
   pinMode(D2, OUTPUT);
+  analogWrite(D8, 0);
 }
 
 void loop()
@@ -212,13 +213,22 @@ void printResult(FirebaseData &data)
 void updateServo()
 {
   static unsigned long baseTimer = 0, verticalTimer = 0, gripperTimer = 0, movementTimer = 0;
+
+  if (baseServoStatus != 0 || verticalServoStatus != 0 || gripperServoStatus != 0 || wheelsStatus != 0)
+  {
+    digitalWrite(LED_BUILTIN, LOW);
+  }
+  else 
+  {
+    digitalWrite(LED_BUILTIN, HIGH);
+  }
   if (baseServoStatus == 1) 
   {
     if (millis() - baseTimer > 20)
     {
       baseTimer = millis();
       if (baseAngle < 180) {
-        baseAngle += 1;
+        baseAngle++;
         baseServo.write(baseAngle);
       }
     }
@@ -229,7 +239,7 @@ void updateServo()
     {
       baseTimer = millis();
       if (baseAngle > 0) {
-        baseAngle -= 1;
+        baseAngle--;
         baseServo.write(baseAngle);
       }
     }
@@ -241,7 +251,7 @@ void updateServo()
       verticalTimer = millis();
       if (verticalAngle < 180)
       {
-        verticalAngle += 1;
+        verticalAngle++;
         verticalServo.write(verticalAngle);
       }
     }
@@ -253,7 +263,7 @@ void updateServo()
       verticalTimer = millis();
       if (verticalAngle > 0)
       {
-        verticalAngle -= 1;
+        verticalAngle--;
         verticalServo.write(verticalAngle);
       }
     }
@@ -263,9 +273,9 @@ void updateServo()
     if (millis() - gripperTimer > 20)
     {
       gripperTimer = millis();
-      if (gripperAngle < 180)
+      if (gripperAngle > 90)
       {
-        gripperAngle += 1;
+        gripperAngle--;
         gripperServo.write(gripperAngle);
       }
     }
@@ -275,9 +285,9 @@ void updateServo()
     if (millis() - gripperTimer > 20)
     {
       gripperTimer = millis();
-      if (gripperAngle > 0)
+      if (gripperAngle < 180)
       {
-        gripperAngle -= 1;
+        gripperAngle++;
         gripperServo.write(gripperAngle);
       }
     }
@@ -289,12 +299,19 @@ void updateServo()
       movementTimer = millis();
       digitalWrite(D1, HIGH);
       digitalWrite(D2, LOW);
+      if (movementSpeed < 1023)
+      {
+        movementSpeed++;
+        analogWrite(D8, movementSpeed);
+      }
     }
   }
   else if (wheelsStatus == 0)
   {
     digitalWrite(D1, LOW);
     digitalWrite(D2, LOW);
+    movementSpeed = 0;
+    analogWrite(D8, movementSpeed);
   }
   else if (wheelsStatus == 2)
   {
@@ -303,6 +320,11 @@ void updateServo()
       movementTimer = millis();
       digitalWrite(D2, LOW);
       digitalWrite(D3, HIGH);
+      if (movementSpeed < 1023)
+      {
+        movementSpeed++;
+        analogWrite(D8, movementSpeed);
+      }
     }   
   }    
 }
