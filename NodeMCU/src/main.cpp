@@ -33,45 +33,36 @@
 */
 
 
-#include "FirebaseESP8266.h"    //FirebaseESP8266.h must be included before ESP8266WiFi.h
+//FirebaseESP8266.h must be included before ESP8266WiFi.h
+#include "FirebaseESP8266.h"
 #include <ESP8266WiFi.h>
 #include <Servo.h>
 
-#define FIREBASE_HOST "robot-controller-8cb59.firebaseio.com"
+#define FIREBASE_HOST "robot-controller-8cb59.firebaseio.com" //Without http:// or https:// schemes
 #define FIREBASE_AUTH "xwe8aG9HgXelueuQgrVglB6o7CRvGxantG01F71q"
 #define WIFI_SSID "Robot Controller Network"
 #define WIFI_PASSWORD "P2541323"
+#define timerValue 50
 
+//Define FirebaseESP8266 data object
+FirebaseData firebaseData;
 
-FirebaseData firebaseData;  // Define FirebaseESP8266 data object
-String path = "/";          // Firebase stream path (database root for this project)
-Servo baseServo, verticalServo, gripperServo;   // Declare objects of class Servo for the servo motors
+String path = "/";
+Servo baseServo, verticalServo, gripperServo;
 
-// initial movement conditions are reset to their neutral positions
-int gripperServoStatus = 0, baseServoStatus = 0, verticalServoStatus = 0, wheelsStatus = 0;
-int baseAngle = 90, verticalAngle = 90, gripperAngle = 180, movementSpeed = 1023/3;
-
-// function declarations
-/*
-Used to print the Firebase data in the serial monitor
-and store the data into the relevant variable
-
-JSON data is ignored and only printed in the serial
-monitor.
-*/
 void printResult(FirebaseData &data);
+void updateMotors();
+void updateHelperServo(int componentStatus, unsigned long &timer, int &servoAngle, Servo i, int minAngle = 0, int incrementStatus = 1, int decrementStatus = 2);
+void updateHelperDCmotor(unsigned long &timer);
 
-// Update the condition and position of the motors.
-void updateServo();
 
-
+int gripperServoStatus = 0, baseServoStatus = 0, verticalServoStatus = 0, wheelsStatus = 0;
+int baseAngle = 90, verticalAngle = 90, gripperAngle = 180, movementSpeed = 0;
 
 void setup()
 {
-  // Enable serial monitor
   Serial.begin(115200);
 
-  // Connect to predefined Wi-Fi network
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   Serial.print("Connecting to Wi-Fi");
   while (WiFi.status() != WL_CONNECTED)
@@ -84,18 +75,15 @@ void setup()
   Serial.println(WiFi.localIP());
   Serial.println();
 
-  // Connect to Firebase host
   Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
   Firebase.reconnectWiFi(true);
 
-  // //Set the size of WiFi rx/tx buffers in the case where we want to work with large data.
-  // firebaseData.setBSSLBufferSize(1024, 1024);
+  //Set the size of WiFi rx/tx buffers in the case where we want to work with large data.
+  firebaseData.setBSSLBufferSize(1024, 1024);
 
-  // //Set the size of HTTP response buffers in the case where we want to work with large data.
-  // firebaseData.setResponseSize(1024);
+  //Set the size of HTTP response buffers in the case where we want to work with large data.
+  firebaseData.setResponseSize(1024);
 
-  // Begin data stream
-  // If stream fails print error in serial monitor, then reboot device
   if (!Firebase.beginStream(firebaseData, path))
   {
     Serial.println("------------------------------------");
@@ -103,11 +91,8 @@ void setup()
     Serial.println("REASON: " + firebaseData.errorReason());
     Serial.println("------------------------------------");
     Serial.println();
-    digitalWrite(LED_BUILTIN, HIGH);
-    ESP.restart();
   }
 
-  // Initialise motors to their neutral positions
   baseServo.attach(D5);
   baseServo.write(baseAngle);
   delay(300);
@@ -120,13 +105,10 @@ void setup()
   pinMode(D1, OUTPUT);
   pinMode(D2, OUTPUT);
   analogWrite(D3, 0);
-  digitalWrite(LED_BUILTIN, LOW);
 }
 
 void loop()
 {
-  // Attempt to read stream
-  // If stream fails print error in serial monitor, then reboot device
   if (!Firebase.readStream(firebaseData))
   {
     Serial.println("------------------------------------");
@@ -134,49 +116,42 @@ void loop()
     Serial.println("REASON: " + firebaseData.errorReason());
     Serial.println("------------------------------------");
     Serial.println();
-    digitalWrite(LED_BUILTIN, HIGH);
-    ESP.restart();
   }
 
-  // If stream timed out, print message and retry on next loop
   if (firebaseData.streamTimeout())
   {
     Serial.println("Stream timeout, resume streaming...");
     Serial.println();
   }
 
-  // If new data is available to be streamed
-  // print data in serial monitor
   if (firebaseData.streamAvailable())
   {
     Serial.println("------------------------------------");
     Serial.println("Stream Data available...");
-    Serial.println("STREAM PATH: " + firebaseData.streamPath());  // path in database
-    Serial.println("EVENT PATH: " + firebaseData.dataPath());     // data entry
-    Serial.println("DATA TYPE: " + firebaseData.dataType());      // data type (JSON or int)
-    Serial.println("EVENT TYPE: " + firebaseData.eventType());    // read or write (will always return read for this project)
+    Serial.println("STREAM PATH: " + firebaseData.streamPath());
+    Serial.println("EVENT PATH: " + firebaseData.dataPath());
+    Serial.println("DATA TYPE: " + firebaseData.dataType());
+    Serial.println("EVENT TYPE: " + firebaseData.eventType());
     Serial.print("VALUE: ");
-    printResult(firebaseData);                                    // print data using function printResult
+    printResult(firebaseData);
     Serial.println("------------------------------------");
     Serial.println();
   }
 
-  updateServo();
+  updateMotors();
 
 
 }
 
-
 void printResult(FirebaseData &data)
 {
-  if (data.dataType() == "int")       // if data is type int
+
+  if (data.dataType() == "int")
   {
-    if(data.dataPath() == "/wheels")  // if path in database is /wheels
+    if(data.dataPath() == "/wheels")
       {
-        wheelsStatus = data.intData();    // store data in wheelsStatus
+        wheelsStatus = data.intData();
       } 
-      // otherwise check if data path is /gripperServo, /baseServo, or /verticalServo
-      // and store the variables accordingly
       else if (data.dataPath() == "/gripperServo")
       {
         gripperServoStatus = data.intData();
@@ -189,20 +164,10 @@ void printResult(FirebaseData &data)
       {
         verticalServoStatus = data.intData();
       }
-    Serial.println(data.intData());   // print the integer data to the serial monitor
+    Serial.println(data.intData());
   }
-
-  /*
-   * If the data is of type JSON
-   * acquire the JSON and arrange the data for each entry in the JSON
-   * in a readable way in the serial monitor 
-   * 
-   * This condition is only true at system startup when the device has no 
-   * understanding of the database structure. After acquring the json
-   * the code will only be acquiring ints as the remote application
-   * is only changing single values and not changing a collection of 
-   * values.
-   */
+  else if (data.dataType() == "string")
+    Serial.println(data.stringData());
   else if (data.dataType() == "json")
   {
     Serial.println();
@@ -215,10 +180,9 @@ void printResult(FirebaseData &data)
     Serial.println();
     Serial.println("Iterate JSON data:");
     Serial.println();
-    size_t len = json.iteratorBegin();  // return number of elements in the JSON
+    size_t len = json.iteratorBegin();
     String key, value = "";
     int type = 0;
-    // iterate over every data entry in the JSON
     for (size_t i = 0; i < len; i++)
     {
       json.iteratorGet(i, type, key, value);
@@ -236,106 +200,94 @@ void printResult(FirebaseData &data)
     }
     json.iteratorEnd();
   }
+  else if (data.dataType() == "array")
+  {
+    Serial.println();
+    //get array data from FirebaseData using FirebaseJsonArray object
+    FirebaseJsonArray &arr = data.jsonArray();
+    //Print all array values
+    Serial.println("Pretty printed Array:");
+    String arrStr;
+    arr.toString(arrStr, true);
+    Serial.println(arrStr);
+    Serial.println();
+    Serial.println("Iterate array values:");
+    Serial.println();
+    for (size_t i = 0; i < arr.size(); i++)
+    {
+      Serial.print(i);
+      Serial.print(", Value: ");
+
+      FirebaseJsonData &jsonData = data.jsonData();
+      //Get the result data from FirebaseJsonArray object
+      arr.get(jsonData, i);
+      if (jsonData.typeNum == JSON_BOOL)
+        Serial.println(jsonData.boolValue ? "true" : "false");
+      else if (jsonData.typeNum == JSON_INT)
+        Serial.println(jsonData.intValue);
+      else if (jsonData.typeNum == JSON_DOUBLE)
+        printf("%.9lf\n", jsonData.doubleValue);
+      else if (jsonData.typeNum == JSON_STRING ||
+               jsonData.typeNum == JSON_NULL ||
+               jsonData.typeNum == JSON_OBJECT ||
+               jsonData.typeNum == JSON_ARRAY)
+        Serial.println(jsonData.stringValue);
+    }
+  }
 }
 
-void updateServo()
+void updateMotors()
 {
-  // Declare and initialise variables to use as timers
   static unsigned long baseTimer = 0, verticalTimer = 0, gripperTimer = 0, movementTimer = 0;
 
-  // Turn the built-in LED off when a motor is rotating
   if (baseServoStatus != 0 || verticalServoStatus != 0 || gripperServoStatus != 0 || wheelsStatus != 0)
-  {
-    digitalWrite(LED_BUILTIN, HIGH);
-  }
-  // LED stays on when stationary
-  else 
   {
     digitalWrite(LED_BUILTIN, LOW);
   }
+  else 
+  {
+    digitalWrite(LED_BUILTIN, HIGH);
+  }
+  updateHelperServo(baseServoStatus, baseTimer, baseAngle, baseServo);
+  updateHelperServo(verticalServoStatus, verticalTimer, verticalAngle, verticalServo);
+  updateHelperServo(gripperServoStatus, gripperTimer, gripperAngle,gripperServo, 90, 2, 1);
+  updateHelperDCmotor(movementTimer);  
+}
 
-  /*
-   * For each "Status" variable, the value is checked
-   * and for each value a corresponding action takes place.
-   * 
-   * For the servos, every 50ms the servo angle is either incremented or decremented
-   * For the dc motors, every 200ms the duty cycle increases by 1/1023 of 100%
-   */
-  if (baseServoStatus == 2) 
+void updateHelperServo(int componentStatus, unsigned long &timer, int &servoAngle, Servo i, int minAngle, int incrementStatus, int decrementStatus)
+{
+  if (componentStatus == incrementStatus) 
   {
-    if (millis() - baseTimer > 50)
+    if (millis() - timer > timerValue)
     {
-      baseTimer = millis();
-      if (baseAngle < 180) {
-        baseAngle++;
-        baseServo.write(baseAngle);
+      timer = millis();
+      if (servoAngle < 180) {
+        servoAngle++;
+        i.write(servoAngle);
       }
     }
   }
-  else if (baseServoStatus == 1)
+  else if (componentStatus == decrementStatus) 
   {
-    if (millis() - baseTimer > 50)
+    if (millis() - timer > timerValue)
     {
-      baseTimer = millis();
-      if (baseAngle > 0) {
-        baseAngle--;
-        baseServo.write(baseAngle);
+      timer = millis();
+      if (servoAngle > minAngle) {
+        servoAngle--;
+        i.write(servoAngle);
       }
     }
   }
-  if (verticalServoStatus == 1)
-  {
-    if (millis() - verticalTimer > 50)
-    {
-      verticalTimer = millis();
-      if (verticalAngle < 180)
-      {
-        verticalAngle++;
-        verticalServo.write(verticalAngle);
-      }
-    }
-  }
-  else if (verticalServoStatus == 2)
-  {
-    if (millis() - verticalTimer > 50)
-    {
-      verticalTimer = millis();
-      if (verticalAngle > 0)
-      {
-        verticalAngle--;
-        verticalServo.write(verticalAngle);
-      }
-    }
-  }
-  if (gripperServoStatus == 1)
-  {
-    if (millis() - gripperTimer > 50)
-    {
-      gripperTimer = millis();
-      if (gripperAngle > 90)
-      {
-        gripperAngle--;
-        gripperServo.write(gripperAngle);
-      }
-    }
-  }
-  else if (gripperServoStatus == 2)
-  {
-    if (millis() - gripperTimer > 50)
-    {
-      gripperTimer = millis();
-      if (gripperAngle < 180)
-      {
-        gripperAngle++;
-        gripperServo.write(gripperAngle);
-      }
-    }
-  }
+}
+
+void updateHelperDCmotor(unsigned long &timer)
+{
+
   if (wheelsStatus == 1)
   {
-    if (millis() - movementTimer > 200)
+    if (millis() - timer > timerValue)
     {
-      movementTimer = millis();
+      timer = millis();
       digitalWrite(D1, HIGH);
       digitalWrite(D2, LOW);
       if (movementSpeed < 1023)
@@ -349,14 +301,14 @@ void updateServo()
   {
     digitalWrite(D1, LOW);
     digitalWrite(D2, LOW);
-    movementSpeed = 1023/3;
+    movementSpeed = 0;
     analogWrite(D3, movementSpeed);
   }
   else if (wheelsStatus == 2)
   {
-    if (millis() - movementTimer > 200) 
+    if (millis() - timer > timerValue) 
     {
-      movementTimer = millis();
+      timer = millis();
       digitalWrite(D1, LOW);
       digitalWrite(D2, HIGH);
       if (movementSpeed < 1023)
@@ -365,5 +317,5 @@ void updateServo()
         analogWrite(D3, movementSpeed);
       }
     }   
-  }    
+  }  
 }
