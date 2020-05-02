@@ -78,12 +78,6 @@ void setup()
   Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
   Firebase.reconnectWiFi(true);
 
-  //Set the size of WiFi rx/tx buffers in the case where we want to work with large data.
-  firebaseData.setBSSLBufferSize(1024, 1024);
-
-  //Set the size of HTTP response buffers in the case where we want to work with large data.
-  firebaseData.setResponseSize(1024);
-
   if (!Firebase.beginStream(firebaseData, path))
   {
     Serial.println("------------------------------------");
@@ -166,8 +160,6 @@ void printResult(FirebaseData &data)
       }
     Serial.println(data.intData());
   }
-  else if (data.dataType() == "string")
-    Serial.println(data.stringData());
   else if (data.dataType() == "json")
   {
     Serial.println();
@@ -199,40 +191,6 @@ void printResult(FirebaseData &data)
       Serial.println(value);
     }
     json.iteratorEnd();
-  }
-  else if (data.dataType() == "array")
-  {
-    Serial.println();
-    //get array data from FirebaseData using FirebaseJsonArray object
-    FirebaseJsonArray &arr = data.jsonArray();
-    //Print all array values
-    Serial.println("Pretty printed Array:");
-    String arrStr;
-    arr.toString(arrStr, true);
-    Serial.println(arrStr);
-    Serial.println();
-    Serial.println("Iterate array values:");
-    Serial.println();
-    for (size_t i = 0; i < arr.size(); i++)
-    {
-      Serial.print(i);
-      Serial.print(", Value: ");
-
-      FirebaseJsonData &jsonData = data.jsonData();
-      //Get the result data from FirebaseJsonArray object
-      arr.get(jsonData, i);
-      if (jsonData.typeNum == JSON_BOOL)
-        Serial.println(jsonData.boolValue ? "true" : "false");
-      else if (jsonData.typeNum == JSON_INT)
-        Serial.println(jsonData.intValue);
-      else if (jsonData.typeNum == JSON_DOUBLE)
-        printf("%.9lf\n", jsonData.doubleValue);
-      else if (jsonData.typeNum == JSON_STRING ||
-               jsonData.typeNum == JSON_NULL ||
-               jsonData.typeNum == JSON_OBJECT ||
-               jsonData.typeNum == JSON_ARRAY)
-        Serial.println(jsonData.stringValue);
-    }
   }
 }
 
