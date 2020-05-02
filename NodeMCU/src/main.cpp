@@ -18,8 +18,8 @@
 
 #define FIREBASE_HOST "robot-controller-8cb59.firebaseio.com" //Without http:// or https:// schemes
 #define FIREBASE_AUTH "xwe8aG9HgXelueuQgrVglB6o7CRvGxantG01F71q"
-#define WIFI_SSID "Beware of dog"
-#define WIFI_PASSWORD "ion-clover-persevere-debrief"
+#define WIFI_SSID "Robot Controller Network"
+#define WIFI_PASSWORD "P2541323"
 
 //Define FirebaseESP8266 data object
 FirebaseData firebaseData;
@@ -65,6 +65,8 @@ void setup()
     Serial.println("REASON: " + firebaseData.errorReason());
     Serial.println("------------------------------------");
     Serial.println();
+    digitalWrite(LED_BUILTIN, HIGH);
+    ESP.restart();
   }
 
   baseServo.attach(D5);
@@ -78,7 +80,8 @@ void setup()
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(D1, OUTPUT);
   pinMode(D2, OUTPUT);
-  analogWrite(D8, 0);
+  analogWrite(D3, 0);
+  digitalWrite(LED_BUILTIN, LOW);
 }
 
 void loop()
@@ -90,12 +93,15 @@ void loop()
     Serial.println("REASON: " + firebaseData.errorReason());
     Serial.println("------------------------------------");
     Serial.println();
+    digitalWrite(LED_BUILTIN, HIGH);
+    ESP.restart();
   }
 
   if (firebaseData.streamTimeout())
   {
     Serial.println("Stream timeout, resume streaming...");
     Serial.println();
+    digitalWrite(LED_BUILTIN, HIGH);
   }
 
   if (firebaseData.streamAvailable())
@@ -110,6 +116,7 @@ void loop()
     printResult(firebaseData);
     Serial.println("------------------------------------");
     Serial.println();
+    digitalWrite(LED_BUILTIN, LOW);
   }
 
   updateServo();
@@ -216,15 +223,15 @@ void updateServo()
 
   if (baseServoStatus != 0 || verticalServoStatus != 0 || gripperServoStatus != 0 || wheelsStatus != 0)
   {
-    digitalWrite(LED_BUILTIN, LOW);
+    digitalWrite(LED_BUILTIN, HIGH);
   }
   else 
   {
-    digitalWrite(LED_BUILTIN, HIGH);
+    digitalWrite(LED_BUILTIN, LOW);
   }
-  if (baseServoStatus == 1) 
+  if (baseServoStatus == 2) 
   {
-    if (millis() - baseTimer > 20)
+    if (millis() - baseTimer > 25)
     {
       baseTimer = millis();
       if (baseAngle < 180) {
@@ -233,9 +240,9 @@ void updateServo()
       }
     }
   }
-  else if (baseServoStatus == 2)
+  else if (baseServoStatus == 1)
   {
-    if (millis() - baseTimer > 20)
+    if (millis() - baseTimer > 25)
     {
       baseTimer = millis();
       if (baseAngle > 0) {
@@ -246,7 +253,7 @@ void updateServo()
   }
   if (verticalServoStatus == 1)
   {
-    if (millis() - verticalTimer > 20)
+    if (millis() - verticalTimer > 25)
     {
       verticalTimer = millis();
       if (verticalAngle < 180)
@@ -258,7 +265,7 @@ void updateServo()
   }
   else if (verticalServoStatus == 2)
   {
-    if (millis() - verticalTimer > 20)
+    if (millis() - verticalTimer > 25)
     {
       verticalTimer = millis();
       if (verticalAngle > 0)
@@ -270,7 +277,7 @@ void updateServo()
   }
   if (gripperServoStatus == 1)
   {
-    if (millis() - gripperTimer > 20)
+    if (millis() - gripperTimer > 25)
     {
       gripperTimer = millis();
       if (gripperAngle > 90)
@@ -282,7 +289,7 @@ void updateServo()
   }
   else if (gripperServoStatus == 2)
   {
-    if (millis() - gripperTimer > 20)
+    if (millis() - gripperTimer > 25)
     {
       gripperTimer = millis();
       if (gripperAngle < 180)
@@ -294,7 +301,7 @@ void updateServo()
   }
   if (wheelsStatus == 1)
   {
-    if (millis() - movementTimer > 20)
+    if (millis() - movementTimer > 200)
     {
       movementTimer = millis();
       digitalWrite(D1, HIGH);
@@ -302,7 +309,7 @@ void updateServo()
       if (movementSpeed < 1023)
       {
         movementSpeed++;
-        analogWrite(D8, movementSpeed);
+        analogWrite(D3, movementSpeed);
       }
     }
   }
@@ -310,20 +317,20 @@ void updateServo()
   {
     digitalWrite(D1, LOW);
     digitalWrite(D2, LOW);
-    movementSpeed = 0;
-    analogWrite(D8, movementSpeed);
+    movementSpeed = 1023/3;
+    analogWrite(D3, movementSpeed);
   }
   else if (wheelsStatus == 2)
   {
-    if (millis() - movementTimer > 20) 
+    if (millis() - movementTimer > 200) 
     {
       movementTimer = millis();
-      digitalWrite(D2, LOW);
-      digitalWrite(D3, HIGH);
+      digitalWrite(D1, LOW);
+      digitalWrite(D2, HIGH);
       if (movementSpeed < 1023)
       {
         movementSpeed++;
-        analogWrite(D8, movementSpeed);
+        analogWrite(D3, movementSpeed);
       }
     }   
   }    
