@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "309032181406",
+    "firebase_url": "https://robot-controller-8cb59.firebaseio.com",
+    "project_id": "robot-controller-8cb59",
+    "storage_bucket": "robot-controller-8cb59.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:309032181406:android:36593c45494b00617be58f",
+        "android_client_info": {
+          "package_name": "com.jcphilips.robotcontroller"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "309032181406-lhbt4olgnhmchjjsiibrkvoebchl05o8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBTAL0OOQfCBS4Z2OSXaEVp_4bVNUsqLGA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "309032181406-lhbt4olgnhmchjjsiibrkvoebchl05o8.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
