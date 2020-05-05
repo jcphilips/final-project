@@ -2,7 +2,7 @@
  * IOT Based Robotic Open Drain Cleaner
  * Created by Jarrod Christopher Philips - P2541323
  * This program makes use of Firebase-ESP8266 library by mobizt
- * and makes use of functions from the Firebasestream example sketch.
+ * and makes use of functions from the Stream example sketch.
  * 
  * The program connects to a predefined WiFi network and then connects
  * to a predefined Firebase host to access its Realtime Database.

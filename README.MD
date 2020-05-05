@@ -1,7 +1,8 @@
 # IOT Based Robotic Open Drain Cleaner
-## Created by Jarrod Christopher Philips - P2541323
+**Created by Jarrod Christopher Philips - P2541323**
 
-This program makes use of [Firebase-ESP8266 library by mobizt] (https://github.com/mobizt/Firebase-ESP8266) and makes use of functions from the Firebasestream example sketch.  
+This program makes use of [Firebase-ESP8266] (https://github.com/mobizt/Firebase-ESP8266) library by mobizt and makes use of functions from the Stream example sketch. 
+
 The program connects to a predefined WiFi network and then connects to a predefined Firebase host to access its Realtime Database. Once connected, it will begin streaming data from a defined path and monitors the path for changes. If a change is detected it will update a variable which controls the motor corresponding to the change. Based on the value the variable is changed to, the program will execute a set of instructions to control the motor. For smooth movement and precision, the servo angle changes 1 degree every 50ms and the speed of the dc motors increases every 200ms when a command to move is given.   
 
 ```
