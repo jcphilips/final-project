@@ -26,10 +26,10 @@
  * Pin connections:
  *    Forward pin for wheels - D1
  *    Reverse pin for wheels - D2
+ *    PWM signal for wheels - D3
  *    Servo for base - D5
  *    Servo for arm - D6
  *    Servo for gripper - D7
- *    PWM signal for wheels - D8
 */
 
 
