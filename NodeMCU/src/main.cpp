@@ -9,7 +9,7 @@
  * Once connected, it will begin streaming data from a defined path
  * and monitors the path for changes. If a change is detected it will
  * update a variable which controls the motor corresponding to the 
- * chage. Based on the value the variable is changed to, the program
+ * change. Based on the value the variable is changed to, the program
  * will execute a set of instructions to control the motor. For smooth
  * movement and precision, the servo angle changes 1 degree every 
  * 50ms and the speed of the dc motors increases every 200ms when
