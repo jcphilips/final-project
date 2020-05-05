@@ -49,7 +49,7 @@ Servo baseServo, verticalServo, gripperServo;   // Declare objects of class Serv
 
 // initial movement conditions are reset to their neutral positions
 int gripperServoStatus = 0, baseServoStatus = 0, verticalServoStatus = 0, wheelsStatus = 0;
-int baseAngle = 90, verticalAngle = 90, gripperAngle = 180, movementSpeed = 1023/3;
+int baseAngle = 90, verticalAngle = 90, gripperAngle = 180, movementSpeed = 1023/4;
 
 // function declarations
 /*
@@ -349,7 +349,7 @@ void updateServo()
   {
     digitalWrite(D1, LOW);
     digitalWrite(D2, LOW);
-    movementSpeed = 1023/3;
+    movementSpeed = 1023/4;
     analogWrite(D3, movementSpeed);
   }
   else if (wheelsStatus == 2)
